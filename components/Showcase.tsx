@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, memo } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { PlusCircle, LayoutGrid, Zap, Smartphone } from 'lucide-react';
 
@@ -36,51 +36,70 @@ const wallpapers = [
   },
 ];
 
-const infiniteWallpapers = [...wallpapers, ...wallpapers, ...wallpapers];
+const infiniteWallpapers = [...wallpapers, ...wallpapers];
 
-const VideoCard: React.FC<{ wp: typeof wallpapers[0] }> = ({ wp }) => {
+// Usamos memo para evitar re-renders desnecessários do componente de vídeo
+const VideoCard = memo(({ wp }: { wp: typeof wallpapers[0] }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const isInView = useInView(videoRef, { margin: "0px" });
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // margin: "200px" permite que o vídeo comece a carregar um pouco antes de aparecer
+  const isInView = useInView(containerRef, { margin: "200px 0px 200px 0px" });
+  const isStrictInView = useInView(containerRef, { margin: "0px" });
 
   useEffect(() => {
-    if (videoRef.current) {
-      if (isInView) {
-        videoRef.current.play().catch(() => {});
-      } else {
-        videoRef.current.pause();
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isStrictInView) {
+      // Reproduzir apenas se estiver visível
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
       }
+    } else {
+      // Pausar imediatamente ao sair da tela para liberar CPU
+      video.pause();
     }
-  }, [isInView]);
+  }, [isStrictInView]);
 
   return (
     <div
-      className="relative w-[260px] h-[540px] md:w-[290px] md:h-[600px] bg-[#0c0c0c] rounded-[3.5rem] p-2.5 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.4)] border-[1px] border-white/10 select-none flex-shrink-0"
+      ref={containerRef}
+      className="relative w-[260px] h-[540px] md:w-[290px] md:h-[600px] bg-[#0c0c0c] rounded-[3.5rem] p-2.5 shadow-xl border-[1px] border-white/10 select-none flex-shrink-0 overflow-hidden"
+      style={{ 
+        transform: 'translateZ(0)', // Força camada de GPU
+        backfaceVisibility: 'hidden',
+        willChange: 'transform'
+      }}
     >
       <div className="relative w-full h-full bg-black rounded-[2.8rem] overflow-hidden">
-        <video 
-          ref={videoRef}
-          loop 
-          muted 
-          playsInline 
-          preload="metadata"
-          poster={wp.poster}
-          className="absolute inset-0 w-full h-full object-cover saturate-[1.2] brightness-105 pointer-events-none"
-        >
-          <source src={wp.videoUrl} type="video/mp4" />
-        </video>
+        {/* Só renderizamos a tag video se estiver perto do viewport (Lazy Loading) */}
+        {isInView ? (
+          <video 
+            ref={videoRef}
+            loop 
+            muted 
+            playsInline 
+            preload="metadata"
+            poster={wp.poster}
+            className="absolute inset-0 w-full h-full object-cover saturate-[1.2] brightness-105 pointer-events-none"
+          >
+            <source src={wp.videoUrl} type="video/mp4" />
+          </video>
+        ) : (
+          <img src={wp.poster} className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm" alt="Loading..." />
+        )}
         
-        {/* Interface de Smartphone Premium (Tamanho Otimizado para Galeria) */}
+        {/* UI do Smartphone */}
         <div className="absolute inset-0 flex flex-col items-center z-20 pointer-events-none p-5 md:p-6 pt-14 md:pt-16">
-          
           <p className="text-[12px] md:text-[13px] font-semibold tracking-tight text-white/90 mb-0.5">Segunda, 12 Junho</p>
           <h4 className="text-6xl md:text-7xl font-bold tracking-tight text-white drop-shadow-[0_8px_25px_rgba(0,0,0,0.5)]">
             {wp.time}
           </h4>
 
-          {/* Dynamic Island */}
           <div className="absolute top-3.5 left-1/2 -translate-x-1/2 w-24 md:w-28 h-6 md:h-7 bg-black rounded-full z-40 border border-white/10" />
 
-          {/* Botões de Rodapé estilo iPhone */}
           <div className="absolute bottom-10 w-full px-10 flex justify-between items-center opacity-80">
             <div className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-black/40 backdrop-blur-2xl flex items-center justify-center border border-white/10">
               <Zap className="w-4 h-4 md:w-5 md:h-5 text-white" />
@@ -90,16 +109,16 @@ const VideoCard: React.FC<{ wp: typeof wallpapers[0] }> = ({ wp }) => {
             </div>
           </div>
 
-          {/* Home Bar */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-28 md:w-30 h-1 bg-white/40 rounded-full" />
         </div>
 
-        {/* Camada de Vidro/Reflexo Realista */}
         <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent z-30 opacity-60 pointer-events-none" />
       </div>
     </div>
   );
-};
+});
+
+VideoCard.displayName = 'VideoCard';
 
 const Showcase: React.FC = () => {
   return (
@@ -120,35 +139,40 @@ const Showcase: React.FC = () => {
         </p>
       </div>
 
-      {/* Carrossel de Smartphones em Tamanho Otimizado */}
-      <div className="relative flex overflow-hidden py-10 select-none group">
+      <div className="relative flex overflow-hidden py-10 select-none">
         <motion.div 
           className="flex gap-6 md:gap-10 px-4"
+          initial={{ x: 0 }}
           animate={{
-            x: ["0%", "-33.33%"]
+            x: ["0%", "-50%"]
           }}
           transition={{
-            duration: 25,
+            duration: 45, // Mais lento = menos estresse de decodificação de vídeo por segundo
             ease: "linear",
             repeat: Infinity,
           }}
-          style={{ width: "max-content" }}
+          style={{ 
+            width: "max-content",
+            willChange: "transform",
+            backfaceVisibility: "hidden",
+            transformStyle: "preserve-3d" // Ajuda na renderização 3D/GPU
+          }}
         >
           {infiniteWallpapers.map((wp, idx) => (
             <VideoCard key={idx} wp={wp} />
           ))}
         </motion.div>
 
-        {/* Gradientes Laterais */}
-        <div className="absolute inset-y-0 left-0 w-24 md:w-64 bg-gradient-to-r from-gray-50 via-gray-50/60 to-transparent z-40 pointer-events-none" />
-        <div className="absolute inset-y-0 right-0 w-24 md:w-64 bg-gradient-to-l from-gray-50 via-gray-50/60 to-transparent z-40 pointer-events-none" />
+        {/* Gradientes Laterais Otimizados */}
+        <div className="absolute inset-y-0 left-0 w-24 md:w-64 bg-gradient-to-r from-gray-50 to-transparent z-40 pointer-events-none" />
+        <div className="absolute inset-y-0 right-0 w-24 md:w-64 bg-gradient-to-l from-gray-50 to-transparent z-40 pointer-events-none" />
       </div>
 
-      {/* Seção de Bônus / Acesso Completo */}
       <div className="container mx-auto px-6 mt-12 md:mt-24">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
           className="max-w-3xl mx-auto p-8 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] bg-white border border-gray-100 shadow-2xl shadow-purple-500/5 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 p-4 opacity-[0.03]">
