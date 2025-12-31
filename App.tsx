@@ -12,6 +12,7 @@ import Footer from './components/Footer';
 
 const App: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
+  const checkoutUrl = "https://pay.kirvano.com/aa3bf7a8-befc-4154-b73f-91d5c1cc6a80";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,9 +39,12 @@ const App: React.FC = () => {
             </div>
             <span className="font-bold text-xl tracking-tight text-gray-900">PREMIUM <span className="text-purple-600">PACK</span></span>
           </div>
-          <button className="hidden md:block bg-gray-900 text-white px-6 py-2 rounded-full font-bold text-sm hover:scale-105 transition-transform">
+          <a 
+            href={checkoutUrl}
+            className="hidden md:block bg-gray-900 text-white px-6 py-2 rounded-full font-bold text-sm hover:scale-105 transition-transform text-center"
+          >
             Quero Meu Pacote
-          </button>
+          </a>
         </div>
       </header>
 
@@ -62,10 +66,13 @@ const App: React.FC = () => {
             exit={{ y: 100, opacity: 0 }}
             className="fixed bottom-6 left-0 w-full px-6 z-40 md:hidden"
           >
-            <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 rounded-2xl shadow-2xl shadow-purple-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
+            <a 
+              href={checkoutUrl}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 rounded-2xl shadow-2xl shadow-purple-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all text-center"
+            >
               <Zap className="w-5 h-5 fill-current" />
               QUERO POR APENAS R$5,90
-            </button>
+            </a>
           </motion.div>
         )}
       </AnimatePresence>

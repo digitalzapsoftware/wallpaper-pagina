@@ -5,6 +5,7 @@ import { Smartphone, Star, Zap, Play, ShieldCheck } from 'lucide-react';
 
 const Hero: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const checkoutUrl = "https://pay.kirvano.com/aa3bf7a8-befc-4154-b73f-91d5c1cc6a80";
 
   useEffect(() => {
     if (videoRef.current) {
@@ -42,12 +43,15 @@ const Hero: React.FC = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 mb-10">
-              <button className="group relative w-full sm:w-auto px-10 py-6 bg-gray-900 rounded-2xl font-black text-xl overflow-hidden transition-all hover:bg-purple-600 hover:scale-105 active:scale-95 shadow-2xl shadow-gray-900/20 text-white">
+              <a 
+                href={checkoutUrl}
+                className="group relative w-full sm:w-auto px-6 md:px-10 py-5 md:py-6 bg-gray-900 rounded-2xl font-black text-lg md:text-xl overflow-hidden transition-all hover:bg-purple-600 hover:scale-105 active:scale-95 shadow-2xl shadow-gray-900/20 text-white text-center flex items-center justify-center"
+              >
                 <span className="relative z-10 flex items-center justify-center gap-3 uppercase">
-                  <Zap className="w-6 h-6 fill-current text-yellow-400" />
+                  <Zap className="w-5 h-5 md:w-6 md:h-6 fill-current text-yellow-400" />
                   Liberar Acesso Agora
                 </span>
-              </button>
+              </a>
               
               <div className="flex flex-col items-center sm:items-start">
                 <div className="flex items-center gap-2">
